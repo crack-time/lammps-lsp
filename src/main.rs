@@ -23,7 +23,7 @@ impl LanguageServer for Backend {
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
                 name: "lammps-lsp".to_string(),
-                version: Some("0.5.2".to_string()),
+                version: Some("0.5.3".to_string()),
             }),
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(

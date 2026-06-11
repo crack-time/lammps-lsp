@@ -79,6 +79,14 @@ impl CommandDb {
                 return Some(entry);
             }
         }
+        if words.len() >= 3 && ["fix", "compute", "dump"].contains(&words[0]) {
+            for len in (1..=words.len() - 2).rev() {
+                let candidate = format!("{} {}", words[0], words[2..2 + len].join(" "));
+                if let Some(entry) = self.lookup(&candidate) {
+                    return Some(entry);
+                }
+            }
+        }
         None
     }
 

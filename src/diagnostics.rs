@@ -1,6 +1,37 @@
+use std::collections::HashMap;
 use tower_lsp::lsp_types::Diagnostic;
 
 const MAX_GROUPS: usize = 32;
+
+pub fn variables_map(lines: &[String]) -> HashMap<String, String> {
+    let mut vars: HashMap<String, String> = HashMap::new();
+    for line in lines {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') || trimmed.is_empty() {
+            continue;
+        }
+        let words: Vec<&str> = trimmed.split_whitespace().collect();
+        if words.len() >= 4 && words[0] == "variable" {
+            let name = words[1].to_string();
+            let value = words[3..].join(" ");
+            vars.insert(name, value);
+        }
+    }
+    vars
+}
+
+fn resolve_line(line: &str, vars: &HashMap<String, String>) -> String {
+    let mut resolved = line.to_string();
+    for (name, value) in vars {
+        let pattern = format!("${{{}}}", name);
+        resolved = resolved.replace(&pattern, value);
+        let pattern2 = format!("${}", name);
+        if !resolved.contains(&pattern) {
+            resolved = resolved.replace(&pattern2, value);
+        }
+    }
+    resolved
+}
 
 pub fn check_line_brackets(line: &str, line_idx: u32) -> Option<Diagnostic> {
     let mut stack: Vec<char> = Vec::new();
@@ -102,8 +133,9 @@ pub fn check_group_count(lines: &[String]) -> Vec<Diagnostic> {
                     },
                     severity: Some(tower_lsp::lsp_types::DiagnosticSeverity::ERROR),
                     source: Some("lammps-lsp".to_string()),
-                    message: "There can be no more than 32 groups defined at one time, including \"all\""
-                        .to_string(),
+                    message:
+                        "There can be no more than 32 groups defined at one time, including \"all\""
+                            .to_string(),
                     ..Default::default()
                 });
             }
@@ -113,7 +145,7 @@ pub fn check_group_count(lines: &[String]) -> Vec<Diagnostic> {
     diags
 }
 
-pub fn check_file_paths(lines: &[String]) -> Vec<Diagnostic> {
+pub fn check_file_paths(lines: &[String], vars: &HashMap<String, String>) -> Vec<Diagnostic> {
     let mut diags = Vec::new();
 
     let read_commands = ["read_data", "read_restart", "read_dump", "include"];
@@ -126,25 +158,30 @@ pub fn check_file_paths(lines: &[String]) -> Vec<Diagnostic> {
 
         let first_word = trimmed.split_whitespace().next().unwrap_or("");
         if read_commands.contains(&first_word) {
-            let args: Vec<&str> = trimmed.split_whitespace().collect();
+            let resolved_line = resolve_line(trimmed, vars);
+            let args: Vec<&str> = resolved_line.split_whitespace().collect();
             if args.len() > 1 {
                 let file_path = args[1].trim_matches('"').trim_matches('\'');
-                if !file_path.contains('*') && !file_path.contains('$') {
-                    let pos = line.find(file_path).unwrap_or(0);
+                if !file_path.contains('*') {
+                    let orig_args: Vec<&str> = trimmed.split_whitespace().collect();
+                    let orig_pos = line.find(orig_args[1]).unwrap_or(0);
                     diags.push(Diagnostic {
                         range: tower_lsp::lsp_types::Range {
                             start: tower_lsp::lsp_types::Position {
                                 line: i as u32,
-                                character: pos as u32,
+                                character: orig_pos as u32,
                             },
                             end: tower_lsp::lsp_types::Position {
                                 line: i as u32,
-                                character: (pos + file_path.len()) as u32,
+                                character: (orig_pos + orig_args[1].len()) as u32,
                             },
                         },
                         severity: Some(tower_lsp::lsp_types::DiagnosticSeverity::WARNING),
                         source: Some("lammps-lsp".to_string()),
-                        message: format!("Cannot verify if file '{}' exists (offline LSP)", file_path),
+                        message: format!(
+                            "Cannot verify if file '{}' exists (offline LSP)",
+                            file_path
+                        ),
                         ..Default::default()
                     });
                 }

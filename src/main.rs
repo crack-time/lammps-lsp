@@ -23,7 +23,7 @@ impl LanguageServer for Backend {
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
                 name: "lammps-lsp".to_string(),
-                version: Some("0.4.0".to_string()),
+                version: Some("0.5.0".to_string()),
             }),
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -98,7 +98,8 @@ impl Backend {
         let group_diags = diagnostics::check_group_count(&lines);
         diags.extend(group_diags);
 
-        let path_diags = diagnostics::check_file_paths(&lines);
+        let vars = diagnostics::variables_map(&lines);
+        let path_diags = diagnostics::check_file_paths(&lines, &vars);
         diags.extend(path_diags);
 
         for (i, line) in lines.iter().enumerate() {

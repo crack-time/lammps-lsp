@@ -2,9 +2,19 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
+pub struct ArgEntry {
+    pub arg: String,
+    #[serde(rename = "type")]
+    pub arg_type: i64,
+    pub choices: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 pub struct DocEntry {
     pub command: Vec<String>,
     pub syntax: Vec<String>,
+    #[serde(default)]
+    pub args: Vec<Vec<ArgEntry>>,
     pub parameters: String,
     pub examples: String,
     pub html_filename: String,

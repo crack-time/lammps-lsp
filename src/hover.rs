@@ -29,6 +29,12 @@ pub fn get_hover(db: &CommandDb, line: &str, line_number: u32) -> Option<Hover> 
         md.push('\n');
     }
 
+    if !doc.description.is_empty() {
+        md.push_str("### Description\n");
+        md.push_str(&doc.description);
+        md.push('\n');
+    }
+
     if !doc.examples.is_empty() {
         md.push_str("### Examples\n");
         md.push_str(&doc.examples);

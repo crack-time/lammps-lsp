@@ -2,6 +2,7 @@ mod completion;
 mod db;
 mod diagnostics;
 mod hover;
+mod semantic_tokens;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -23,7 +24,7 @@ impl LanguageServer for Backend {
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
                 name: "lammps-lsp".to_string(),
-                version: Some("0.5.3".to_string()),
+                version: Some("0.5.4".to_string()),
             }),
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -34,6 +35,11 @@ impl LanguageServer for Backend {
                     trigger_characters: Some(vec![" ".to_string()]),
                     ..Default::default()
                 }),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        semantic_tokens::options(),
+                    ),
+                ),
                 ..Default::default()
             },
         })
@@ -64,6 +70,20 @@ impl LanguageServer for Backend {
 
         let list = completion::get_completions(&self.db, pos, &line);
         Ok(Some(CompletionResponse::List(list)))
+    }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
+        let text = self
+            .docs
+            .lock()
+            .unwrap()
+            .get(&params.text_document.uri)
+            .cloned()
+            .unwrap_or_default();
+        Ok(Some(semantic_tokens::get_tokens(&self.db, &text)))
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {

@@ -1,15 +1,12 @@
 use crate::db::CommandDb;
-use tower_lsp::lsp_types::{
-    Hover, HoverContents, MarkupContent, MarkupKind, Position, Range,
-};
+use tower_lsp::lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Position, Range};
 
-pub fn get_hover(db: &CommandDb, line: &str) -> Option<Hover> {
+pub fn get_hover(db: &CommandDb, line: &str, line_number: u32) -> Option<Hover> {
     if line.trim().starts_with('#') {
         return None;
     }
 
-    let first_word = line.trim().split_whitespace().next()?;
-    let doc = db.lookup(first_word)?;
+    let doc = db.lookup_with_prefix(line)?;
 
     let mut md = String::new();
 
@@ -57,11 +54,11 @@ pub fn get_hover(db: &CommandDb, line: &str) -> Option<Hover> {
         }),
         range: Some(Range {
             start: Position {
-                line: 0,
+                line: line_number,
                 character: 0,
             },
             end: Position {
-                line: 0,
+                line: line_number,
                 character: line.len() as u32,
             },
         }),

@@ -31,7 +31,7 @@ impl LanguageServer for Backend {
                 )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 completion_provider: Some(CompletionOptions {
-                    trigger_characters: Some(vec![]),
+                    trigger_characters: Some(vec![" ".to_string()]),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -51,7 +51,7 @@ impl LanguageServer for Backend {
             text.lines().nth(pos.line as usize).map(|s| s.to_string())
         }).unwrap_or_default();
 
-        Ok(hover::get_hover(&self.db, &line))
+        Ok(hover::get_hover(&self.db, &line, pos.line))
     }
 
     async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {

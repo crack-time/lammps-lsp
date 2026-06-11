@@ -31,12 +31,12 @@ jobs:
           target: x86_64-pc-windows-msvc
       - run: cargo build --release --target x86_64-pc-windows-msvc
       - run: |
-          copy target\x86_64-pc-windows-msvc\release\lammps-lsp.exe lammps-lsp-x86_64-pc-windows-gnu.exe
+          copy target\x86_64-pc-windows-msvc\release\lammps-lsp.exe lammps-lsp-x86_64-pc-windows-msvc.exe
       - uses: softprops/action-gh-release@v2
         with:
-          files: lammps-lsp-x86_64-pc-windows-gnu.exe
+          files: lammps-lsp-x86_64-pc-windows-msvc.exe
 
-  build-macos:
+  build-macos-x86_64:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,8 +44,20 @@ jobs:
         with:
           target: x86_64-apple-darwin
       - run: cargo build --release --target x86_64-apple-darwin
-      - run: |
-          cp target/x86_64-apple-darwin/release/lammps-lsp lammps-lsp-x86_64-apple-darwin
+      - run: cp target/x86_64-apple-darwin/release/lammps-lsp lammps-lsp-x86_64-apple-darwin
       - uses: softprops/action-gh-release@v2
         with:
           files: lammps-lsp-x86_64-apple-darwin
+
+  build-macos-aarch64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: aarch64-apple-darwin
+      - run: cargo build --release --target aarch64-apple-darwin
+      - run: cp target/aarch64-apple-darwin/release/lammps-lsp lammps-lsp-aarch64-apple-darwin
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: lammps-lsp-aarch64-apple-darwin

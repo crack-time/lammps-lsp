@@ -4,6 +4,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -26,7 +29,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           target: x86_64-pc-windows-gnu
-      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64 mingw-w64-tools
       - run: cargo build --release --target x86_64-pc-windows-gnu
       - run: |
           cp target/x86_64-pc-windows-gnu/release/lammps-lsp.exe lammps-lsp-x86_64-pc-windows-gnu.exe

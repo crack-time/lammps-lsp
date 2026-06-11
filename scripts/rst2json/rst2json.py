@@ -287,6 +287,27 @@ class CMD:
                     for a in choices:
                         choices, b_acc = app_choices(a, choices)
                     arg_ar.append({"arg": a, "type": a_type, "choices": choices})
+
+            # Inject nested sub-keywords from parameters (level 2+ keyword = ... patterns)
+            sub_keywords = []
+            for dscp in dscps:
+                if dscp[0].strip() == "keyword" and " or " in dscp[1]:
+                    kws = [
+                        k.strip()
+                        for k in dscp[1].split(" or ")
+                        if k.strip() and "=" not in k and " " not in k
+                    ]
+                    if len(kws) > 1:
+                        sub_keywords = kws
+                        break
+            if sub_keywords:
+                for ae in arg_ar:
+                    if ae["type"] == 3:
+                        for kw in sub_keywords:
+                            if kw not in ae["choices"]:
+                                ae["choices"].append(kw)
+                        break
+
             return arg_ar
 
         def args_AtC_commands(self, args, dscps):

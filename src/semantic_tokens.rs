@@ -492,4 +492,28 @@ mod tests {
         assert!(types.contains(&T_KEYWORD));
         assert!(types.contains(&T_STYLE));
     }
+
+    #[test]
+    fn test_group_sub_keywords() {
+        let db = test_db();
+        let tokens = tokenize_line(
+            db,
+            "group defect dynamic all var defect every 1000",
+            "group defect dynamic all var defect every 1000",
+        );
+        // group=KEYWORD, dynamic=STYLE, var=STYLE, every=STYLE, 1000=NUMBER
+        // defect (user group ID) and all (predefined group) remain unhighlighted
+        let types = token_types(&tokens);
+        assert_eq!(types, vec![T_KEYWORD, T_STYLE, T_STYLE, T_STYLE, T_NUMBER]);
+        assert_eq!(tokens[0].0, 0); // "group" at col 0
+        assert_eq!(tokens[0].1, 5); // len 5
+        assert_eq!(tokens[1].0, 13); // "dynamic" at col 13
+        assert_eq!(tokens[1].1, 7); // len 7
+        assert_eq!(tokens[2].0, 25); // "var" at col 25
+        assert_eq!(tokens[2].1, 3); // len 3
+        assert_eq!(tokens[3].0, 36); // "every" at col 36
+        assert_eq!(tokens[3].1, 5); // len 5
+        assert_eq!(tokens[4].0, 42); // "1000" at col 42
+        assert_eq!(tokens[4].1, 4); // len 4
+    }
 }

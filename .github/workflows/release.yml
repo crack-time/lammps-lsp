@@ -23,16 +23,15 @@ jobs:
           files: lammps-lsp-x86_64-unknown-linux-gnu
 
   build-windows:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          target: x86_64-pc-windows-gnu
-      - run: sudo apt-get update && sudo apt-get install -y mingw-w64 mingw-w64-tools
-      - run: cargo build --release --target x86_64-pc-windows-gnu
+          target: x86_64-pc-windows-msvc
+      - run: cargo build --release --target x86_64-pc-windows-msvc
       - run: |
-          cp target/x86_64-pc-windows-gnu/release/lammps-lsp.exe lammps-lsp-x86_64-pc-windows-gnu.exe
+          copy target\x86_64-pc-windows-msvc\release\lammps-lsp.exe lammps-lsp-x86_64-pc-windows-gnu.exe
       - uses: softprops/action-gh-release@v2
         with:
           files: lammps-lsp-x86_64-pc-windows-gnu.exe

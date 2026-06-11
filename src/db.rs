@@ -73,7 +73,7 @@ impl CommandDb {
         if words.is_empty() {
             return None;
         }
-        for len in (1..=words.len()).rev() {
+        for len in (2..=words.len()).rev() {
             let candidate = words[..len].join(" ");
             if let Some(entry) = self.lookup(&candidate) {
                 return Some(entry);
@@ -86,6 +86,9 @@ impl CommandDb {
                     return Some(entry);
                 }
             }
+        }
+        if let Some(entry) = self.lookup(words[0]) {
+            return Some(entry);
         }
         None
     }

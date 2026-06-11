@@ -1,0 +1,49 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: x86_64-unknown-linux-gnu
+      - run: cargo build --release --target x86_64-unknown-linux-gnu
+      - run: |
+          cp target/x86_64-unknown-linux-gnu/release/lammps-lsp lammps-lsp-x86_64-unknown-linux-gnu
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: lammps-lsp-x86_64-unknown-linux-gnu
+
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: x86_64-pc-windows-gnu
+      - run: sudo apt-get update && sudo apt-get install -y mingw-w64
+      - run: cargo build --release --target x86_64-pc-windows-gnu
+      - run: |
+          cp target/x86_64-pc-windows-gnu/release/lammps-lsp.exe lammps-lsp-x86_64-pc-windows-gnu.exe
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: lammps-lsp-x86_64-pc-windows-gnu.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: x86_64-apple-darwin
+      - run: cargo build --release --target x86_64-apple-darwin
+      - run: |
+          cp target/x86_64-apple-darwin/release/lammps-lsp lammps-lsp-x86_64-apple-darwin
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: lammps-lsp-x86_64-apple-darwin

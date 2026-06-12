@@ -119,18 +119,23 @@ fn tokenize_line(db: &CommandDb, trimmed: &str, line: &str) -> Vec<(u32, u32, us
         return tokens;
     }
 
-    if trimmed.contains('#') {
+    if trimmed.starts_with('#') {
         let start = line.find('#').unwrap_or(0);
         let length = (line.len() - start) as u32;
-        if let Some(var_tokens) = scan_variables_in_prefix(line) {
-            tokens.extend(var_tokens);
-        }
         tokens.push((start as u32, length, T_COMMENT));
         return tokens;
     }
 
-    let words: Vec<&str> = trimmed.split_whitespace().collect();
+    // Split at inline comment marker; cmd_line is the prefix before #
+    let comment_start = line.find('#');
+    let cmd_line = comment_start.map(|pos| &line[..pos]).unwrap_or(line);
+    let words: Vec<&str> = cmd_line.split_whitespace().collect();
+
     if words.is_empty() {
+        if let Some(cs) = comment_start {
+            let length = (line.len() - cs) as u32;
+            tokens.push((cs as u32, length, T_COMMENT));
+        }
         return tokens;
     }
 
@@ -213,8 +218,14 @@ fn tokenize_line(db: &CommandDb, trimmed: &str, line: &str) -> Vec<(u32, u32, us
         }
     }
 
-    if let Some(var_tokens) = scan_variables(line) {
+    if let Some(var_tokens) = scan_variables(cmd_line) {
         tokens.extend(var_tokens);
+    }
+
+    // Add comment token if inline comment exists
+    if let Some(cs) = comment_start {
+        let length = (line.len() - cs) as u32;
+        tokens.push((cs as u32, length, T_COMMENT));
     }
 
     tokens
@@ -234,15 +245,6 @@ fn word_positions<'a>(line: &str, words: &[&str]) -> Vec<Vec<(u32, u32)>> {
         }
     }
     result
-}
-
-fn scan_variables_in_prefix(line: &str) -> Option<Vec<(u32, u32, usize)>> {
-    let line_chars: Vec<char> = line.chars().collect();
-    let end = line
-        .chars()
-        .position(|c| c == '#')
-        .unwrap_or(line_chars.len());
-    scan_vars_in_range(&line_chars, 0, end)
 }
 
 fn scan_variables(line: &str) -> Option<Vec<(u32, u32, usize)>> {
@@ -341,10 +343,11 @@ mod tests {
     fn test_comment_with_variable_in_prefix() {
         let db = test_db();
         let tokens = tokenize_line(db, "fix ${x} # comment", "fix ${x} # comment");
-        // Variable + comment
-        assert_eq!(tokens.len(), 2);
-        assert_eq!(tokens[0].2, T_VARIABLE); // ${x}
-        assert_eq!(tokens[1].2, T_COMMENT); // # comment
+        // fix + Variable + comment
+        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens[0].2, T_KEYWORD); // fix
+        assert_eq!(tokens[1].2, T_VARIABLE); // ${x}
+        assert_eq!(tokens[2].2, T_COMMENT); // # comment
     }
 
     #[test]
@@ -468,10 +471,11 @@ mod tests {
         // Regression test for scan_variables_in_prefix with leading whitespace
         let db = test_db();
         let tokens = tokenize_line(db, "fix ${x} # comment", "  fix ${x} # comment");
-        assert_eq!(tokens.len(), 2);
-        assert_eq!(tokens[0].2, T_VARIABLE); // full ${x} captured
-        assert_eq!(tokens[0].1, 4); // len=4 for "${x}"
-        assert_eq!(tokens[1].2, T_COMMENT);
+        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens[0].2, T_KEYWORD); // fix
+        assert_eq!(tokens[1].2, T_VARIABLE); // full ${x} captured
+        assert_eq!(tokens[1].1, 4); // len=4 for "${x}"
+        assert_eq!(tokens[2].2, T_COMMENT);
     }
 
     #[test]

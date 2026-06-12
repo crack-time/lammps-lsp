@@ -498,6 +498,24 @@ mod tests {
     }
 
     #[test]
+    fn test_variable_equal_style_with_inline_comment() {
+        let db = test_db();
+        let line = "variable        fitslope_x equal slope(f_msd_x)/(100*dt)    # A**2/ps";
+        let tokens = tokenize_line(db, line.trim(), line);
+        // variable=KEYWORD, equal=STYLE, # A**2/ps=COMMENT
+        // fitslope_x and slope(f_msd_x)/(100*dt) have no token
+        let types = token_types(&tokens);
+        assert_eq!(types, vec![T_KEYWORD, T_STYLE, T_COMMENT]);
+        assert_eq!(tokens[0].0, 0); // "variable" at col 0
+        assert_eq!(tokens[0].1, 8); // len 8
+                                    // "equal" position: after "variable" (8) + 8 spaces + "fitslope_x" (10) + 1 space = 27
+        assert_eq!(tokens[1].0, 27); // "equal" at col 27
+        assert_eq!(tokens[1].1, 5); // len 5
+                                    // comment starts at #
+        assert_eq!(line.as_bytes()[tokens[2].0 as usize] as char, '#');
+    }
+
+    #[test]
     fn test_group_sub_keywords() {
         let db = test_db();
         let tokens = tokenize_line(
